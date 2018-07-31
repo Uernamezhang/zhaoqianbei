@@ -1,0 +1,40 @@
+{
+  "name": "zhaoqianbei",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "node node_modules/react-native/local-cli/cli.js start",
+    "test": "jest"
+  },
+  "dependencies": {
+    "antd-mobile": "^2.1.9",
+    "react": "16.2.0",
+    "react-native": "0.52.0",
+    "react-native-code-push": "^5.4.0",
+    "react-native-data-table": "^0.2.0",
+    "react-native-http-cache": "^0.2.0",
+    "react-native-linear-gradient": "^2.4.0",
+    "react-native-material-kit": "^0.5.1",
+    "react-native-qq": "^2.0.5",
+    "react-native-scrollable-tab-view": "^0.8.0",
+    "react-native-splash-screen": "^3.0.9",
+    "react-native-update": "^5.1.0",
+    "react-native-vector-icons": "^4.6.0",
+    "react-native-wechat": "^1.9.9",
+    "react-navigation": "^1.5.11",
+    "react-redux": "^5.0.6",
+    "react-router-native": "^4.2.0",
+    "redux": "^3.7.2"
+  },
+  "devDependencies": {
+    "babel-jest": "22.1.0",
+    "babel-plugin-import": "^1.7.0",
+    "babel-preset-react-native": "4.0.0",
+    "jest": "22.1.4",
+    "react-test-renderer": "16.2.0",
+    "redux-devtools": "^3.4.1"
+  },
+  "jest": {
+    "preset": "react-native"
+  }
+}

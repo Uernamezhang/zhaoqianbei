@@ -1,0 +1,956 @@
+//大课主页面
+import React from 'react';
+import ScrollableTabView , { ScrollableTabBar } from 'react-native-scrollable-tab-view';
+import { Toast } from 'antd-mobile';
+import Pullref from './Pullref';
+import Msters from './Msters';
+import Loadings from '../containers/Loading';
+import * as BigClassContainers from '../containers/BigClass';
+import SplashScreen from 'react-native-splash-screen';
+import {
+  StatusBar,
+  Image,
+  FlatList,
+  Button,
+  TouchableHighlight,
+  Text,
+  View,
+  AsyncStorage
+} from 'react-native';
+//获取列表数据
+masternetwork = (uid,dispatch,typedata,typetry,typeerr,statedata,page,pagetype,datalengthtype) => {
+  let formdata = new FormData();
+  formdata.append('categoryId',uid);
+  formdata.append('page',page);
+  //前辈列表请求
+  fetch('https://www.zhaoqianbei.com/api/Index/dake',{
+    method:'POST',
+    body:formdata
+  }).then((response)=>{
+      if(response.ok){
+        dispatch({
+          type:typetry
+        })
+        return response.json()
+      }
+  }).then((resdata)=>{
+    let data ;
+    //由于没有前辈的数据返回的不是一个空数组而是一个对象，所以这里要进行判断一下，来返回不同的数据格式
+    resdata.data.data===undefined?data = resdata.data:data = resdata.data.data
+    //单页数据
+    //发送单页数据，判断数据长度是否最后一页
+      dispatch({
+        type:datalengthtype,
+        pagedata:data
+      })
+      //判断数据长度，来决定是否翻页可以自增加
+      data.length===20?
+      dispatch({
+          type:pagetype
+        }):null
+      let newData
+      //如果前辈列表为空，用数组包裹起来返回的对象，否则添加新数组
+      if(resdata.data.data===undefined){
+        newData = [data]
+      }else{
+        newData = statedata.concat(data)
+      }
+      //新数据返回给state
+      dispatch({
+        type:typedata,
+        masterdata:newData
+      })
+  }).catch(
+    (e)=>{
+      //网络错误发送Action，显示网络错误页面
+      dispatch({
+        type:typeerr
+      })
+    }
+  )
+}
+//下面是所有的大课，没用遍历循环的原因是，因为展示的数据源不同，会影响之前的页面渲染
+//PHP
+export class Php extends React.Component{
+  componentDidMount(){
+    masternetwork(
+      this.props.uid,
+      this.props.dispatch,
+      'BIGCLASS_MASTERPHPDATA',
+      'MASTERPHPDATA_TRY',
+      'MASTERPHPDATA_ERR',
+      this.props.data,
+      this.props.page,
+      'PAGE_PHPDATA',
+      'PAGE_PHPDATALENG'
+    )
+    //轮询网络，如果网络连接或者信号不稳定失败自动尝试连接，
+    let timer
+    timer = setInterval(()=>{
+      if(this.props.data.length === 0 || this.props.err === false){
+        masternetwork(
+          this.props.uid,
+          this.props.dispatch,
+          'BIGCLASS_MASTERPHPDATA',
+          'MASTERPHPDATA_TRY',
+          'MASTERPHPDATA_ERR',
+          this.props.data,
+          this.props.page,
+          'PAGE_PHPDATA',
+          'PAGE_PHPDATALENG'
+        )
+      }else{
+        clearInterval(timer)
+      }
+    },5000)
+  }
+  render(){
+    const { data , err , dispatch , page , pagedata } = this.props
+    return(
+      err===true?data.length===0?<Loadings/>:
+      <Msters
+        keid={1}
+        prices={this.props.prices}
+        specialPrices={this.props.specialPrices}
+        classess={this.props.classess}
+        periods={this.props.period}
+        intros={this.props.intro}
+        listData={data}
+        navigate={this.props.navigates}
+        ListFooter={pagedata.length<20?'没有更多前辈了':'下面还有更多前辈，↓继续拉'}
+        topRef={
+          //获取到的单页数据长度，作为判断
+          pagedata.length===20?()=>{
+            masternetwork(
+              this.props.uid,
+              dispatch,
+              'BIGCLASS_MASTERPHPDATA',
+              'MASTERPHPDATA_TRY',
+              'MASTERPHPDATA_ERR',
+              this.props.data,
+              page,
+              'PAGE_PHPDATA',
+              'PAGE_PHPDATALENG'
+            )
+          }:null
+        }
+      />:
+      <Pullref
+        networks={()=>masternetwork(
+          this.props.uid,
+          this.props.dispatch,
+          'BIGCLASS_MASTERPHPDATA',
+          'MASTERPHPDATA_TRY',
+          'MASTERPHPDATA_ERR'
+        )}
+      />
+    )
+  }
+}
+//web
+export class Web extends React.Component{
+  componentDidMount(){
+    masternetwork(
+      this.props.uid,
+      this.props.dispatch,
+      'BIGCLASS_MASTERWEBDATA',
+      'MASTERWEBDATA_TRY',
+      'MASTERWEBDATA_ERR',
+      this.props.data,
+      this.props.page,
+      'PAGE_WEBDATA',
+      'PAGE_WEBDATALENG'
+    )
+    //轮询网络，如果网络连接或者信号不稳定失败自动尝试连接，
+    let timer
+    timer = setInterval(()=>{
+      if(this.props.data.length === 0 || this.props.err === false){
+        masternetwork(
+          this.props.uid,
+          this.props.dispatch,
+          'BIGCLASS_MASTERWEBDATA',
+          'MASTERWEBDATA_TRY',
+          'MASTERWEBDATA_ERR',
+          this.props.data,
+          this.props.page,
+          'PAGE_WEBDATA',
+          'PAGE_WEBDATALENG'
+        )
+      }else{
+        clearInterval(timer)
+      }
+    },5000)
+  }
+  render(){
+    const { data , err , dispatch , page , pagedata } = this.props
+    return(
+      err===true?data.length===0?<Loadings/>:
+      <Msters
+        keid={2}
+        prices={this.props.prices}
+        specialPrices={this.props.specialPrices}
+        classess={this.props.classess}
+        periods={this.props.period}
+        intros={this.props.intro}
+        listData={data}
+        navigate={this.props.navigates}
+        ListFooter={pagedata.length<20?'没有更多前辈了':'下面还有更多前辈，↓继续拉'}
+        topRef={
+          //获取到的单页数据长度，作为判断
+          pagedata.length===20?()=>{
+            masternetwork(
+              this.props.uid,
+              dispatch,
+              'BIGCLASS_MASTERWEBDATA',
+              'MASTERWEBDATA_TRY',
+              'MASTERWEBDATA_ERR',
+              this.props.data,
+              page,
+              'PAGE_WEBDATA',
+              'PAGE_WEBDATALENG'
+            )
+          }:null
+        }
+      />:
+      <Pullref
+        networks={()=>masternetwork(
+          this.props.uid,
+          this.props.dispatch,
+          'BIGCLASS_MASTERWEBDATA',
+          'MASTERWEBDATA_TRY',
+          'MASTERWEBDATA_ERR'
+        )}
+      />
+    )
+  }
+}
+
+//java
+export class Java extends React.Component{
+  componentDidMount(){
+    masternetwork(
+      this.props.uid,
+      this.props.dispatch,
+      'BIGCLASS_MASTERJAVADATA',
+      'MASTERJAVADATA_TRY',
+      'MASTERJAVADATA_ERR',
+      this.props.data,
+      this.props.page,
+      'PAGE_JAVADATA',
+      'PAGE_JAVADATALENG'
+    )
+    //轮询网络，如果网络连接或者信号不稳定失败自动尝试连接，
+    let timer
+    timer = setInterval(()=>{
+      if(this.props.data.length === 0 || this.props.err === false){
+        masternetwork(
+          this.props.uid,
+          this.props.dispatch,
+          'BIGCLASS_MASTERJAVADATA',
+          'MASTERJAVADATA_TRY',
+          'MASTERJAVADATA_ERR',
+          this.props.data,
+          this.props.page,
+          'PAGE_JAVADATA',
+          'PAGE_JAVADATALENG'
+        )
+      }else{
+        clearInterval(timer)
+      }
+    },5000)
+  }
+  render(){
+    const { data , err , dispatch , page , pagedata } = this.props
+    return(
+      err===true?data.length===0?<Loadings/>:
+      <Msters
+        keid={3}
+        prices={this.props.prices}
+        specialPrices={this.props.specialPrices}
+        classess={this.props.classess}
+        periods={this.props.period}
+        intros={this.props.intro}
+        listData={data}
+        navigate={this.props.navigates}
+        ListFooter={pagedata.length<20?'没有更多前辈了':'下面还有更多前辈，↓继续拉'}
+        topRef={
+          //获取到的单页数据长度，作为判断
+          pagedata.length===20?()=>{
+            masternetwork(
+              this.props.uid,
+              dispatch,
+              'BIGCLASS_MASTERJAVADATA',
+              'MASTERJAVADATA_TRY',
+              'MASTERJAVADATA_ERR',
+              this.props.data,
+              page,
+              'PAGE_JAVADATA',
+              'PAGE_JAVADATALENG'
+            )
+          }:null
+        }
+      />:
+      <Pullref
+        networks={()=>masternetwork(
+          this.props.uid,
+          this.props.dispatch,
+          'BIGCLASS_MASTERJAVADATA',
+          'MASTERJAVADATA_TRY',
+          'MASTERJAVADATA_ERR'
+        )}
+      />
+    )
+  }
+}
+
+
+//net
+export class Net extends React.Component{
+  componentDidMount(){
+    masternetwork(
+      this.props.uid,
+      this.props.dispatch,
+      'BIGCLASS_MASTERNETDATA',
+      'MASTERNETDATA_TRY',
+      'MASTERNETDATA_ERR',
+      this.props.data,
+      this.props.page,
+      'PAGE_NETDATA',
+      'PAGE_NETDATALENG'
+    )
+    //轮询网络，如果网络连接或者信号不稳定失败自动尝试连接，
+    let timer
+    timer = setInterval(()=>{
+      if(this.props.data.length === 0 || this.props.err === false){
+        masternetwork(
+          this.props.uid,
+          this.props.dispatch,
+          'BIGCLASS_MASTERNETDATA',
+          'MASTERNETDATA_TRY',
+          'MASTERNETDATA_ERR',
+          this.props.data,
+          this.props.page,
+          'PAGE_NETDATA',
+          'PAGE_NETDATALENG'
+        )
+      }else{
+        clearInterval(timer)
+      }
+    },5000)
+  }
+  render(){
+    const { data , err , dispatch , page , pagedata } = this.props
+    return(
+      err===true?data.length===0?<Loadings/>:
+      <Msters
+        keid={4}
+        prices={this.props.prices}
+        specialPrices={this.props.specialPrices}
+        classess={this.props.classess}
+        periods={this.props.period}
+        intros={this.props.intro}
+        listData={data}
+        navigate={this.props.navigates}
+        ListFooter={pagedata.length<20?'没有更多前辈了':'下面还有更多前辈，↓继续拉'}
+        topRef={
+          //获取到的单页数据长度，作为判断
+          pagedata.length===20?()=>{
+            masternetwork(
+              this.props.uid,
+              dispatch,
+              'BIGCLASS_MASTERNETDATA',
+              'MASTERNETDATA_TRY',
+              'MASTERNETDATA_ERR',
+              this.props.data,
+              page,
+              'PAGE_NETDATA',
+              'PAGE_NETDATALENG'
+            )
+          }:null
+        }
+      />:
+      <Pullref
+        networks={()=>masternetwork(
+          this.props.uid,
+          this.props.dispatch,
+          'BIGCLASS_MASTERNETDATA',
+          'MASTERNETDATA_TRY',
+          'MASTERNETDATA_ERR'
+        )}
+      />
+    )
+  }
+}
+//android
+export class Android extends React.Component{
+  componentDidMount(){
+    masternetwork(
+      this.props.uid,
+      this.props.dispatch,
+      'BIGCLASS_MASTERANDROIDDATA',
+      'MASTERANDROIDDATA_TRY',
+      'MASTERANDROIDDATA_ERR',
+      this.props.data,
+      this.props.page,
+      'PAGE_ANDROIDDATA',
+      'PAGE_ANDROIDDATALENG'
+    )
+    //轮询网络，如果网络连接或者信号不稳定失败自动尝试连接，
+    let timer
+    timer = setInterval(()=>{
+      if(this.props.data.length === 0 || this.props.err === false){
+        masternetwork(
+          this.props.uid,
+          this.props.dispatch,
+          'BIGCLASS_MASTERANDROIDDATA',
+          'MASTERANDROIDDATA_TRY',
+          'MASTERANDROIDDATA_ERR',
+          this.props.data,
+          this.props.page,
+          'PAGE_ANDROIDDATA',
+          'PAGE_ANDROIDDATALENG'
+        )
+      }else{
+        clearInterval(timer)
+      }
+    },5000)
+  }
+  render(){
+    const { data , err , dispatch , page , pagedata } = this.props
+    return(
+      err===true?data.length===0?<Loadings/>:
+      <Msters
+        keid={5}
+        prices={this.props.prices}
+        specialPrices={this.props.specialPrices}
+        classess={this.props.classess}
+        periods={this.props.period}
+        intros={this.props.intro}
+        listData={data}
+        navigate={this.props.navigates}
+        ListFooter={pagedata.length<20?'没有更多前辈了':'下面还有更多前辈，↓继续拉'}
+        topRef={
+          //获取到的单页数据长度，作为判断
+          pagedata.length===20?()=>{
+            masternetwork(
+              this.props.uid,
+              dispatch,
+              'BIGCLASS_MASTERANDROIDDATA',
+              'MASTERANDROIDDATA_TRY',
+              'MASTERANDROIDDATA_ERR',
+              this.props.data,
+              page,
+              'PAGE_ANDROIDDATA',
+              'PAGE_ANDROIDDATALENG'
+            )
+          }:null
+        }
+      />:
+      <Pullref
+        networks={()=>masternetwork(
+          this.props.uid,
+          this.props.dispatch,
+          'BIGCLASS_MASTERANDROIDDATA',
+          'MASTERANDROIDDATA_TRY',
+          'MASTERANDROIDDATA_ERR'
+        )}
+      />
+    )
+  }
+}
+//Ui
+export class Ui extends React.Component{
+  componentDidMount(){
+    masternetwork(
+      this.props.uid,
+      this.props.dispatch,
+      'BIGCLASS_MASTERUIDATA',
+      'MASTERUIDATA_TRY',
+      'MASTERUIDATA_ERR',
+      this.props.data,
+      this.props.page,
+      'PAGE_UIDATA',
+      'PAGE_UIDATALENG'
+    )
+    //轮询网络，如果网络连接或者信号不稳定失败自动尝试连接，
+    let timer
+    timer = setInterval(()=>{
+      if(this.props.data.length === 0 || this.props.err === false){
+        masternetwork(
+          this.props.uid,
+          this.props.dispatch,
+          'BIGCLASS_MASTERUIDATA',
+          'MASTERUIDATA_TRY',
+          'MASTERUIDATA_ERR',
+          this.props.data,
+          this.props.page,
+          'PAGE_UIDATA',
+          'PAGE_UIDATALENG'
+        )
+      }else{
+        clearInterval(timer)
+      }
+    },5000)
+  }
+  render(){
+    const { data , err , dispatch , page , pagedata } = this.props
+    return(
+      err===true?data.length===0?<Loadings/>:
+      <Msters
+        keid={6}
+        prices={this.props.prices}
+        specialPrices={this.props.specialPrices}
+        classess={this.props.classess}
+        periods={this.props.period}
+        intros={this.props.intro}
+        listData={data}
+        navigate={this.props.navigates}
+        ListFooter={pagedata.length<20?'没有更多前辈了':'下面还有更多前辈，↓继续拉'}
+        topRef={
+          //获取到的单页数据长度，作为判断
+          pagedata.length===20?()=>{
+            masternetwork(
+              this.props.uid,
+              dispatch,
+              'BIGCLASS_MASTERUIDATA',
+              'MASTERUIDATA_TRY',
+              'MASTERUIDATA_ERR',
+              this.props.data,
+              page,
+              'PAGE_UIDATA',
+              'PAGE_UIDATALENG'
+            )
+          }:null
+        }
+      />:
+      <Pullref
+        networks={()=>masternetwork(
+          this.props.uid,
+          this.props.dispatch,
+          'BIGCLASS_MASTERUIDATA',
+          'MASTERUIDATA_TRY',
+          'MASTERUIDATA_ERR'
+        )}
+      />
+    )
+  }
+}
+//"Python"
+export class Python extends React.Component{
+  componentDidMount(){
+    masternetwork(
+      this.props.uid,
+      this.props.dispatch,
+      'BIGCLASS_MASTERPYTHONDATA',
+      'MASTERPYTHONDATA_TRY',
+      'MASTERPYTHONDATA_ERR',
+      this.props.data,
+      this.props.page,
+      'PAGE_PYTHONDATA',
+      'PAGE_PYTHONDATALENG'
+    )
+    //轮询网络，如果网络连接或者信号不稳定失败自动尝试连接，
+    let timer
+    timer = setInterval(()=>{
+      if(this.props.data.length === 0 || this.props.err === false){
+        masternetwork(
+          this.props.uid,
+          this.props.dispatch,
+          'BIGCLASS_MASTERPYTHONDATA',
+          'MASTERPYTHONDATA_TRY',
+          'MASTERPYTHONDATA_ERR',
+          this.props.data,
+          this.props.page,
+          'PAGE_PYTHONDATA',
+          'PAGE_PYTHONDATALENG'
+        )
+      }else{
+        clearInterval(timer)
+      }
+    },5000)
+  }
+  render(){
+    const { data , err , dispatch , page , pagedata } = this.props
+    return(
+      err===true?data.length===0?<Loadings/>:
+      <Msters
+        keid={7}
+        prices={this.props.prices}
+        specialPrices={this.props.specialPrices}
+        classess={this.props.classess}
+        periods={this.props.period}
+        intros={this.props.intro}
+        listData={data}
+        navigate={this.props.navigates}
+        ListFooter={pagedata.length<20?'没有更多前辈了':'下面还有更多前辈，↓继续拉'}
+        topRef={
+          //获取到的单页数据长度，作为判断
+          pagedata.length===20?()=>{
+            masternetwork(
+              this.props.uid,
+              dispatch,
+              'BIGCLASS_MASTERPYTHONDATA',
+              'MASTERPYTHONDATA_TRY',
+              'MASTERPYTHONDATA_ERR',
+              this.props.data,
+              page,
+              'PAGE_PYTHONDATA',
+              'PAGE_PYTHONDATALENG'
+            )
+          }:null
+        }
+      />:
+      <Pullref
+        networks={()=>masternetwork(
+          this.props.uid,
+          this.props.dispatch,
+          'BIGCLASS_MASTERANDROIDDATA',
+          'MASTERPYTHONDATA_TRY',
+          'MASTERPYTHONDATA_ERR'
+        )}
+      />
+    )
+  }
+}
+//"C"
+export class C extends React.Component{
+  componentDidMount(){
+    masternetwork(
+      this.props.uid,
+      this.props.dispatch,
+      'BIGCLASS_MASTERCDATA',
+      'MASTERCDATA_TRY',
+      'MASTERCDATA_ERR',
+      this.props.data,
+      this.props.page,
+      'PAGE_CDATA',
+      'PAGE_CDATALENG'
+    )
+    //轮询网络，如果网络连接或者信号不稳定失败自动尝试连接，
+    let timer
+    timer = setInterval(()=>{
+      if(this.props.data.length === 0 || this.props.err === false){
+        masternetwork(
+          this.props.uid,
+          this.props.dispatch,
+          'BIGCLASS_MASTERCDATA',
+          'MASTERCDATA_TRY',
+          'MASTERCDATA_ERR',
+          this.props.data,
+          this.props.page,
+          'PAGE_CDATA',
+          'PAGE_CDATALENG'
+        )
+      }else{
+        clearInterval(timer)
+      }
+    },5000)
+  }
+  render(){
+    const { data , err , dispatch , page , pagedata } = this.props
+    return(
+      err===true?data.length===0?<Loadings/>:
+      <Msters
+        keid={8}
+        prices={this.props.prices}
+        specialPrices={this.props.specialPrices}
+        classess={this.props.classess}
+        periods={this.props.period}
+        intros={this.props.intro}
+        listData={data}
+        navigate={this.props.navigates}
+        ListFooter={pagedata.length<20?'没有更多前辈了':'下面还有更多前辈，↓继续拉'}
+        topRef={
+          //获取到的单页数据长度，作为判断
+          pagedata.length===20?()=>{
+            masternetwork(
+              this.props.uid,
+              dispatch,
+              'BIGCLASS_MASTERCDATA',
+              'MASTERCDATA_TRY',
+              'MASTERCDATA_ERR',
+              this.props.data,
+              page,
+              'PAGE_CDATA',
+              'PAGE_CDATALENG'
+            )
+          }:null
+        }
+      />:
+      <Pullref
+        networks={()=>masternetwork(
+          this.props.uid,
+          this.props.dispatch,
+          'BIGCLASS_MASTERCDATA',
+          'MASTERCDATA_TRY',
+          'MASTERCDATA_ERR'
+        )}
+      />
+    )
+  }
+}
+//"大数据"
+export class BigData extends React.Component{
+  componentDidMount(){
+    masternetwork(
+      this.props.uid,
+      this.props.dispatch,
+      'BIGCLASS_MASTERBIGDATA',
+      'MASTERCBIGDATA_TRY',
+      'MASTERBIGDATA_ERR',
+      this.props.data,
+      this.props.page,
+      'PAGE_BIGDATA',
+      'PAGE_BIGDATADATALENG'
+    )
+    //轮询网络，如果网络连接或者信号不稳定失败自动尝试连接，
+    let timer
+    timer = setInterval(()=>{
+      if(this.props.data.length === 0 || this.props.err === false){
+        masternetwork(
+          this.props.uid,
+          this.props.dispatch,
+          'BIGCLASS_MASTERBIGDATA',
+          'MASTERCBIGDATA_TRY',
+          'MASTERBIGDATA_ERR',
+          this.props.data,
+          this.props.page,
+          'PAGE_BIGDATA',
+          'PAGE_BIGDATADATALENG'
+        )
+      }else{
+        clearInterval(timer)
+      }
+    },5000)
+  }
+  render(){
+    const { data , err , dispatch , page , pagedata } = this.props
+    return(
+      err===true?data.length===0?<Loadings/>:
+      <Msters
+        keid={9}
+        prices={this.props.prices}
+        specialPrices={this.props.specialPrices}
+        classess={this.props.classess}
+        periods={this.props.period}
+        intros={this.props.intro}
+        navigate={this.props.navigates}
+        listData={data}
+        topRef={
+          //获取到的单页数据长度，作为判断
+          pagedata.length===20?()=>{
+            masternetwork(
+              this.props.uid,
+              dispatch,
+              'BIGCLASS_MASTERBIGDATA',
+              'MASTERCBIGDATA_TRY',
+              'MASTERBIGDATA_ERR',
+              this.props.data,
+              page,
+              'PAGE_BIGDATA',
+              'PAGE_BIGDATADATALENG'
+            )
+          }:null
+        }
+      />:
+      <Pullref
+        networks={()=>masternetwork(
+          this.props.uid,
+          this.props.dispatch,
+          'BIGCLASS_MASTERBIGDATA',
+          'MASTERCBIGDATA_TRY',
+          'MASTERBIGDATA_ERR'
+        )}
+      />
+    )
+  }
+}
+export class BigClassNav extends React.Component{
+  //获取课程数据
+  network = () => {
+    fetch('https://www.zhaoqianbei.com/api/Index/kecheng',{
+      method:'GET'
+    }).then(
+      (response)=>{
+        if(response.ok===true){
+          this.props.dispatch({
+            type:'BIGCLASS_TRY'
+          });
+          return response.json()
+        }
+      }
+    ).then(
+      (responseData)=>{
+        let bigdata = responseData.data.data
+        this.props.dispatch({
+          type:'BIGCLASS_KECHENG',
+          kechengdata:bigdata
+        })
+      }
+    ).catch(
+      (e)=>{
+        this.props.dispatch({
+          type:'BIGCLASS_ERR'
+        })
+      }
+    )
+  }
+  componentDidMount(){
+    SplashScreen.hide()
+    this.network()
+    let timer
+    //轮询网络，如果网络连接或者信号不稳定失败自动尝试连接，
+    timer = setInterval(()=>{
+      if(this.props.kechengdata.length===undefined || this.props.err===false){
+        this.network()
+      }else if(this.props.kechengdata.length!==undefined || this.props.err===true){
+        clearInterval(timer)
+      }
+    },5000)
+    AsyncStorage.getItem('login',(e,data)=>{
+      if(data!=null){
+        let statedata = JSON.parse(data)
+        //如果本地有账号储存则发送Action更新State的输入框值
+        if(statedata.loginstatu==true){
+          let formdata = new FormData();
+          formdata.append('user_name',statedata.phoneval);
+          formdata.append('password',statedata.passwordval);
+          fetch('https://www.zhaoqianbei.com/api/index/login',{
+            method:'POST',
+            body:formdata
+          }).then((res)=>{
+            return res.json()
+          }).then((resdata)=>{
+            if(resdata.ret_msg==1){
+              Toast.info('欢迎回来',1)
+            }else if(resdata.ret_msg==0){
+              Toast.info('密码验证失败',1)
+            }else if(resdata.ret_msg==-1){
+              Toast.info('账号验证失败',1)
+            }
+          }).catch((e)=>{
+            this.props.dispatch({
+              type:'BIGCLASS_ERR'
+            })
+          })
+        }
+        // this.props.dispatch({
+        //   type:'LOGOINPHONE_VAL',
+        //   val:statedata.phoneval
+        // })
+        // this.props.dispatch({
+        //   type:'LOGOINPASSWORD_VAL',
+        //   val:statedata.passwordval
+        // })
+      }
+    })
+  }
+  render(){
+    const { err , kechengdata } = this.props
+    return(
+          err===true?kechengdata.length===undefined?<Loadings/>:
+          <ScrollableTabView
+            renderTabBar={()=> <ScrollableTabBar style={{borderBottomWidth: 0}}/>}
+            tabBarUnderlineStyle={{backgroundColor:'white'}}
+            tabBarBackgroundColor='rgb(25,160,148)'
+            tabBarActiveTextColor='white'
+            tabBarInactiveTextColor='white'
+            scrollWithoutAnimation={true}
+          >
+            <BigClassContainers.MasterPhp
+              prices={kechengdata[0].ke_price}
+              specialPrices={kechengdata[0].ke_dis_price}
+              classess={kechengdata[0].ke_class}
+              period={kechengdata[0].ke_period}
+              intro={kechengdata[0].ke_short_intro}
+              navigates={this.props.navigation.navigate}
+              tabLabel={kechengdata[0].ke_title}
+              uid={kechengdata[0].ke_type_second}
+            />
+            <BigClassContainers.MasterWeb
+              prices={kechengdata[1].ke_price}
+              specialPrices={kechengdata[1].ke_dis_price}
+              classess={kechengdata[1].ke_class}
+              period={kechengdata[1].ke_period}
+              intro={kechengdata[1].ke_short_intro}
+              navigates={this.props.navigation.navigate}
+              tabLabel={kechengdata[1].ke_title}
+              uid={kechengdata[1].ke_type_second}
+            />
+            <BigClassContainers.MasterJava
+              prices={kechengdata[2].ke_price}
+              specialPrices={kechengdata[2].ke_dis_price}
+              classess={kechengdata[2].ke_class}
+              period={kechengdata[2].ke_period}
+              intro={kechengdata[2].ke_short_intro}
+              navigates={this.props.navigation.navigate}
+              tabLabel={kechengdata[2].ke_title}
+              uid={kechengdata[2].ke_type_second}
+            />
+            <BigClassContainers.MasterNet
+              prices={kechengdata[3].ke_price}
+              specialPrices={kechengdata[3].ke_dis_price}
+              classess={kechengdata[3].ke_class}
+              period={kechengdata[3].ke_period}
+              intro={kechengdata[3].ke_short_intro}
+              navigates={this.props.navigation.navigate}
+              tabLabel={kechengdata[3].ke_title}
+              uid={kechengdata[3].ke_type_second}
+            />
+            <BigClassContainers.MasterAndroid
+              prices={kechengdata[4].ke_price}
+              specialPrices={kechengdata[4].ke_dis_price}
+              classess={kechengdata[4].ke_class}
+              period={kechengdata[4].ke_period}
+              intro={kechengdata[4].ke_short_intro}
+              navigates={this.props.navigation.navigate}
+              tabLabel={kechengdata[4].ke_title}
+              uid={kechengdata[4].ke_type_second}
+            />
+            <BigClassContainers.MasterUi
+              prices={kechengdata[5].ke_price}
+              specialPrices={kechengdata[5].ke_dis_price}
+              classess={kechengdata[5].ke_class}
+              period={kechengdata[5].ke_period}
+              intro={kechengdata[5].ke_short_intro}
+              navigates={this.props.navigation.navigate}
+              tabLabel={kechengdata[5].ke_title}
+              uid={kechengdata[5].ke_type_second}
+            />
+            <BigClassContainers.MasterPython
+              prices={kechengdata[6].ke_price}
+              specialPrices={kechengdata[6].ke_dis_price}
+              classess={kechengdata[6].ke_class}
+              period={kechengdata[6].ke_period}
+              intro={kechengdata[6].ke_short_intro}
+              navigates={this.props.navigation.navigate}
+              tabLabel={kechengdata[6].ke_title}
+              uid={kechengdata[6].ke_type_second}
+            />
+            <BigClassContainers.MasterC
+              prices={kechengdata[7].ke_price}
+              specialPrices={kechengdata[7].ke_dis_price}
+              classess={kechengdata[7].ke_class}
+              period={kechengdata[7].ke_period}
+              intro={kechengdata[7].ke_short_intro}
+              navigates={this.props.navigation.navigate}
+              tabLabel={kechengdata[7].ke_title}
+              uid={kechengdata[7].ke_type_second}
+            />
+            <BigClassContainers.MasterBigData
+              prices={kechengdata[8].ke_price}
+              specialPrices={kechengdata[8].ke_dis_price}
+              classess={kechengdata[8].ke_class}
+              period={kechengdata[8].ke_period}
+              intro={kechengdata[8].ke_short_intro}
+              navigates={this.props.navigation.navigate}
+              tabLabel={kechengdata[8].ke_title}
+              uid={kechengdata[8].ke_type_second}
+            />
+          </ScrollableTabView>:
+          <Pullref
+            networks={()=>this.network()}
+          />
+    )
+  }
+}
